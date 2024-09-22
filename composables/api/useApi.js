@@ -2,7 +2,7 @@ export const useAPI = () => {
   const config = useRuntimeConfig()
 
   const get = (url, params) => {
-    return useFetch(() => url, {
+    return $fetch(url, {
       baseURL: config.public.apiBase,
       method: 'GET',
       ...params
@@ -10,7 +10,7 @@ export const useAPI = () => {
   }
 
   const post = (url, payload) => {
-    return useFetch(() => url, {
+    return $fetch(url, {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: payload,
@@ -21,7 +21,7 @@ export const useAPI = () => {
   }
 
   const put = (url, payload) => {
-    return useFetch(() => url, {
+    return $fetch(url, {
       baseURL: config.public.apiBase,
       method: 'PUT',
       body: payload,
@@ -32,7 +32,7 @@ export const useAPI = () => {
   }
 
   const del = (url, params) => {
-    return useFetch(() => url, {
+    return $fetch(url, {
       baseURL: config.public.apiBase,
       method: 'DELETE',
       ...params
