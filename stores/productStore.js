@@ -1,4 +1,4 @@
-import { defineStore } from "pinia"
+import { defineStore } from 'pinia'
 
 export const useProductStore = defineStore('productStore', () => {
   const api = useAPI()
@@ -11,30 +11,27 @@ export const useProductStore = defineStore('productStore', () => {
   })
   const lastRequest = ref(false)
 
+  const product = ref(null)
+
   const getProducts = async (paginate = true) => {
-    let query = ``
-    
-    if (lastRequest.value) {
-      return
-    }
+    if (lastRequest.value) return
 
-    if (!paginate) {
-      clearProducts()
-    }
+    if (!paginate) clearProducts()
 
+    const queryParameters = []
     if (paginate) {
-      query = query + `offset=${offset.value}&limit=${limit.value}`
-
-      offset.value = products.value.length > 0 ? offset.value + 10 : 0
+      queryParameters.push(`offset=${offset.value}`, `limit=${limit.value}`)
+      offset.value = products.value.length > 0 ? offset.value + limit.value : 0
     }
 
     if (filters.value.categoryId) {
-      query = query + `${filters.categoryId ? (!paginate ? '?' : '&') + 'categoryId=' + filters.categoryId : ''}`
+      queryParameters.push(`categoryId=${filters.value.categoryId}`)
     }
 
-    const data = await api.get(`/products${query ? '?' + query : ''}`)
+    const queryString = queryParameters.length ? `?${queryParameters.join('&')}` : ''
+    const data = await api.get(`/products${queryString}`)
 
-    products.value.push(...data)
+    setProducts(data)
 
     if (!data.length || !paginate) {
       lastRequest.value = true
@@ -43,13 +40,28 @@ export const useProductStore = defineStore('productStore', () => {
 
   const clearProducts = () => {
     products.value = []
+    lastRequest.value = false
+  }
+
+  const setProducts = (data) => {
+    _each(data, (item) => {
+      const i = _findIndex(products.value, { id: item.id })
+
+      if (i < 0) {
+        products.value.push(item)
+      } else {
+        products.value.splice(i, 1, item)
+      }
+    })
   }
 
   return {
     products,
     offset,
     limit,
+    filters,
     lastRequest,
+    product,
 
     getProducts,
     clearProducts,

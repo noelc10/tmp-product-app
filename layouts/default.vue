@@ -26,8 +26,8 @@
       </div>
     </v-main>
 
-    <!-- <ConfirmDialog />
-    <VToast /> -->
+    <ConfirmDialog />
+    <Snackbar />
     
     <v-footer color="grey-lighten-4">
       <div class="px-4 py-2 text-center w-100">

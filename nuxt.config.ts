@@ -19,16 +19,35 @@ export default defineNuxtConfig({
       'composables/**'
     ]
   },
+  components: [
+    {
+      path: './components',
+      extensions: ['.vue'],
+      pathPrefix: false
+    }
+  ],
   modules: [
     'vuetify-nuxt-module',
     '@pinia/nuxt',
     '@vueuse/nuxt',
     '@nuxt/fonts',
+    'nuxt-lodash',
   ],
   css: [
     '~/assets/scss/main.scss',
   ],
   pinia: {
     storesDirs: ['./stores/**'],
+  },
+  lodash: {
+    prefix: "_",
+    prefixSkip: ["string"],
+    upperAfterPrefix: false,
+    exclude: ["map"],
+    alias: [
+      ["camelCase", "stringToCamelCase"], // => stringToCamelCase
+      ["kebabCase", "stringToKebab"], // => stringToKebab
+      ["isDate", "isLodashDate"], // => _isLodashDate
+    ],
   },
 })
