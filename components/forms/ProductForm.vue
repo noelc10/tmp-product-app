@@ -4,6 +4,8 @@ import { useProductStore } from '@/stores/productStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { VForm } from 'vuetify/components/VForm'
 import { storeToRefs } from 'pinia'
+import { useField, useForm } from 'vee-validate'
+import * as yup from 'yup'
 
 const props = defineProps({
   isDialogVisible: {
@@ -21,6 +23,23 @@ const categoryStore = useCategoryStore()
 const snackbarStore = useSnackbarStore()
 
 const { product } = storeToRefs(productStore)
+
+const { defineField, errors, meta, isSubmitting, isValidating, handleSubmit } = useForm({
+  validationSchema: yup.object({
+    title: yup.string().required('The title field is required.').min(2, 'The description field should have at least 2 characters.').default(null),
+    description: yup.string().required('The description field is required.').min(3, 'The description field should have at least 3 characters.').default(null),
+    price: yup.number().required('The price field is required.').min(0, 'The price field should have at least value of 0.').positive().default(null),
+    categoryId: yup.string().required('The category ID field is required.').default(null),
+    images: yup.array().of(yup.string().url()).optional().default(['']),
+  }),
+})
+
+const title = useField('title')
+const description = useField('description')
+const price = useField('price')
+const categoryId = useField('categoryId')
+const images = useField('images')
+
 const categories = ref([
   {
     id: null,
@@ -31,21 +50,20 @@ const categories = ref([
 
 const refProductVForm = ref()
 
-const formData = ref({
-  title: null,
-  price: null,
-  description: null,
-  categoryId: null,
-  images: []
-})
-
-const formErrors = ref({
-  title: undefined,
-  price: undefined,
-  description: undefined,
-  categoryId: undefined,
-  images: undefined,
-})
+// const formData = ref({
+//   title: null,
+//   price: null,
+//   description: null,
+//   categoryId: null,
+//   images: []
+// })
+// const formData = ref({
+//   title: useField('title'),
+//   price: useField('price'),
+//   description: useField('description'),
+//   categoryId: useField('categoryId'),
+//   images: useField('images')
+// })
 
 const loading = ref(false)
 
@@ -73,7 +91,7 @@ const updateModelValue = val => {
 }
 
 const onSubmit = () => {
-  refProductVForm.value?.validate().then(async ({ valid: isValid }) => {
+  refProductVForm.value?.validate().then(async ({ valid: isValid, resetForm }) => {
     if (isValid) {
       try {
         loading.value = true
@@ -85,11 +103,11 @@ const onSubmit = () => {
           message: `Successfully ${editMode.value ? 'updating' : 'adding'} product.`,
         })
 
+        resetForm()
+
         updateModelValue(false)
       } catch (e) {
         if ((e.status >= 400 && e.status >= 499) || e?.data?.errors) {
-          formErrors.value = e?.data?.errors
-
           snackbarStore.show({
             color: 'error',
             message: `Validation error while ${editMode.value ? 'updating' : 'adding'} product. Kindly please check the form data for validated valued before submitting.`,
@@ -112,21 +130,13 @@ const onCancel = () => {
 }
 
 const clearForm = () => {
-  formData.value = {
-    title: null,
-    price: null,
-    description: null,
-    categoryId: null,
-    images: []
-  }
-
-  formErrors.value = {
-    title: undefined,
-    price: undefined,
-    description: undefined,
-    categoryId: undefined,
-    images: []
-  }
+  // formData.value = {
+  //   title: null,
+  //   price: null,
+  //   description: null,
+  //   categoryId: null,
+  //   images: []
+  // }
 }
 
 onMounted(async () => {
@@ -178,11 +188,11 @@ onMounted(async () => {
               <VCol cols="12">
                 <label>Title</label>
                 <VTextField
-                  v-model="formData.title"
+                  v-model="title.value.value"
                   required
                   label=""
                   variant="outlined"
-                  :error-messages="formErrors.title"
+                  :error-messages="title.errorMessage.value"
                 />
               </VCol>
             </VRow>
@@ -190,13 +200,13 @@ onMounted(async () => {
               <VCol cols="12">
                 <label>Price</label>
                 <VTextField
-                  v-model="formData.price"
+                  v-model="price.value.value"
                   required
                   label=""
                   type="number"
                   min="0"
                   variant="outlined"
-                  :error-messages="formErrors.price"
+                  :error-messages="price.errorMessage.value"
                 />
               </VCol>
             </VRow>
@@ -204,12 +214,12 @@ onMounted(async () => {
               <VCol cols="12">
                 <label>Description</label>
                 <VTextarea
-                  v-model="formData.description"
+                  v-model="description.value.value"
                   required
                   label=""
                   type="textarea"
                   variant="outlined"
-                  :error-messages="formErrors.description"
+                  :error-messages="description.errorMessage.value"
                 />
               </VCol>
             </VRow>
@@ -217,14 +227,14 @@ onMounted(async () => {
               <VCol cols="12">
                 <label>Category</label>
                 <VSelect
-                  v-model="formData.categoryId"
+                  v-model="categoryId.value.value"
                   :items="categoryStore.categoriesData"
                   item-title="name"
                   item-value="id"
                   label=""
                   placeholder="Select Category"
                   variant="outlined"
-                  :error-messages="formErrors.categoryId"
+                  :error-messages="categoryId.errorMessage.value"
                 />
               </VCol>
             </VRow>
@@ -232,7 +242,7 @@ onMounted(async () => {
               <VCol cols="12">
                 <label>Image URL</label>
                 <VTextField
-                  v-model="formData.images[0]"
+                  v-model="images.value.value"
                   required
                   label=""
                   placeholder="https://image-url.com"

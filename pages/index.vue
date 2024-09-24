@@ -70,7 +70,7 @@ async function filterProductByCategory(id) {
   <v-infinite-scroll
     class="overflow-x-hidden"
     width="auto"
-    :height="products?.length ? '82dvh' : 100"
+    :height="products?.length ? '82dvh' : 200"
     :items="products"
     @load="init"
   >

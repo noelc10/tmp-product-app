@@ -32,6 +32,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxt/fonts',
     'nuxt-lodash',
+    '@vee-validate/nuxt',
   ],
   css: [
     '~/assets/scss/main.scss',
@@ -49,5 +50,14 @@ export default defineNuxtConfig({
       ["kebabCase", "stringToKebab"], // => stringToKebab
       ["isDate", "isLodashDate"], // => _isLodashDate
     ],
+  },
+  veeValidate: {
+    autoImports: true,
+    componentNames: {
+      Form: 'VeeForm',
+      Field: 'VeeField',
+      FieldArray: 'VeeFieldArray',
+      ErrorMessage: 'VeeErrorMessage',
+    },
   },
 })
