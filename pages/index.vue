@@ -12,7 +12,7 @@ const categoryStore = useCategoryStore()
 const snackbarStore = useSnackbarStore()
 const confirmDialogStore = useConfirmDialogStore()
 
-const { products, offset, limit, filters, lastRequest } = storeToRefs(productStore)
+const { products, offset, limit, filters, endRequest } = storeToRefs(productStore)
 const categories = ref([
   {
     id: null,
@@ -25,7 +25,13 @@ watch(
   async (val) => {
     if (val.name === 'index') {
       await categoryStore.getCategories()
-      categories.value.push(...categoryStore.categoriesData)
+      categories.value = [
+        {
+          id: null,
+          name: 'All',
+        },
+        ...categoryStore.categoriesData
+      ]
     }
   }, {
     immediate: true,
@@ -33,22 +39,22 @@ watch(
 )
 
 async function init ({ done } = {}) {
-  if (lastRequest.value) {
-    if (typeof done === 'function') done('empty')
+  if (endRequest.value) {
+    if (typeof done === 'function') done('ok')
 
     return
   }
 
   try {
     await productStore.getProducts(true)
-
+    
     if (typeof done === 'function') done('ok')
   } catch (e) {
     snackbarStore.show({
       color: 'error',
       message: `Something went wrong while fetching product lists: : ${e?.statusText ?? e}`
     })
-
+    
     if (typeof done === 'function') done('error')
   }
 }
@@ -56,21 +62,29 @@ async function init ({ done } = {}) {
 async function filterProductByCategory(id) {
   productStore.clearProducts()
   filters.value.categoryId = id
-  await init()
+  await init('ok')
 }
 </script>
 
 <template>
   <v-infinite-scroll
-    :height="products?.length ? '86vh' : 200"
+    class="overflow-x-hidden"
+    width="auto"
+    :height="products?.length ? '82dvh' : 100"
     :items="products"
     @load="init"
   >
     <v-container fluid>
       <v-row justify="end">
-        <v-col cols="12" sm="4" md="3">
+        <v-col
+          cols="12"
+          sm="4"
+          md="3"
+          class="mb-4"
+        >
           <VSelect
             v-model="filters.categoryId"
+            hide-details
             variant="outlined"
             item-title="name"
             item-value="id"
@@ -80,80 +94,94 @@ async function filterProductByCategory(id) {
           />
         </v-col>
       </v-row>
+      
       <v-row>
-        <v-col
+        <v-fade-transition
+          leave-absolute
           v-for="product in products"
           :key="product.id"
-          cols="12"
-          sm="6"
-          md="4"
-          lg="3"
         >
-          <v-card>
-            <v-btn
-              icon
-              color="green"
-              class="mb-4"
-              position="absolute"
-              location="top right"
-              size="36"
-              :style="'top: 8px; right: 8px; z-index: 1'"
-            >
-              <v-icon icon="mdi-dots-vertical" />
-
-              <v-menu
-                location="bottom"
-                transition="scale-transition"
-                activator="parent"
+          <v-col
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
+          >
+            <v-card>
+              <v-btn
+                icon
+                color="green"
+                class="mb-4"
+                position="absolute"
+                location="top right"
+                size="36"
+                :style="'top: 8px; right: 8px; z-index: 1'"
               >
-                <v-list>
-                  <v-list-item>
-                    <v-list-item-title>
-                      <v-icon left icon="mdi-pencil" /> Edit
-                    </v-list-item-title>
-                  </v-list-item>
-                  <v-list-item>
-                    <v-list-item-title>
-                      <v-icon left icon="mdi-delete" /> Delete
-                    </v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </v-btn>
+                <v-icon icon="mdi-dots-vertical" />
 
-            <v-img
-              height="200px"
-              :src="product?.images[0] ?? 'https://i.imgur.com/sUFH1Aq.png'"
-              cover
-            ></v-img>
+                <v-menu
+                  location="bottom"
+                  transition="scale-transition"
+                  activator="parent"
+                >
+                  <v-list>
+                    <v-list-item>
+                      <v-list-item-title>
+                        <v-icon left icon="mdi-pencil" /> Edit
+                      </v-list-item-title>
+                    </v-list-item>
+                    <v-list-item>
+                      <v-list-item-title>
+                        <v-icon left icon="mdi-delete" /> Delete
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-btn>
 
-            <v-card-title>
-              {{ product?.title }}
-            </v-card-title>
+              <v-img
+                height="200px"
+                :src="product?.images[0] ?? 'https://i.imgur.com/sUFH1Aq.png'"
+                cover
+              ></v-img>
 
-            <v-card-subtitle>
-              {{ product?.category?.name }}
-            </v-card-subtitle>
+              <v-card-title>
+                {{ product?.title }}
+              </v-card-title>
 
-            <v-card-text>
-              <div class="font-weight-bold text-h5">
-                ${{ product?.price }}
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
+              <v-card-subtitle>
+                {{ product?.category?.name }}
+              </v-card-subtitle>
+
+              <v-card-text>
+                <div class="font-weight-bold text-h5">
+                  ${{ product?.price }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-fade-transition>
       </v-row>
     </v-container>
     <template v-slot:empty>
-      <v-container v-if="!products.length && lastRequest" fluid>
+      <v-container fluid v-if="!products.length && endRequest">
         <v-row>
           <v-col class="text-center">
             Product list empty!
           </v-col>
         </v-row>
       </v-container>
-      <v-container v-if="!products.length && !lastRequest" fluid>
+      <v-container fluid v-if="!products.length && !endRequest">
         <v-row>
+          <v-col class="text-center">
+            <v-progress-circular indeterminate />
+          </v-col>
+        </v-row>
+      </v-container>
+    </template>
+    <template v-slot:loading>
+      <v-container fluid v-if="!endRequest">
+        <v-row v-if="!endRequest">
           <v-col class="text-center">
             <v-progress-circular indeterminate />
           </v-col>
@@ -171,7 +199,7 @@ async function filterProductByCategory(id) {
     app
     appear
     :to="'/add'"
-    :style="'bottom: 8vh;'"
+    :style="'bottom: 10dvh;'"
   ></v-fab>
 
   <NuxtPage />

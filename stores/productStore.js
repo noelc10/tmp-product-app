@@ -9,12 +9,12 @@ export const useProductStore = defineStore('productStore', () => {
   const filters = ref({
     categoryId: null
   })
-  const lastRequest = ref(false)
+  const endRequest = ref(false)
 
   const product = ref(null)
 
   const getProducts = async (paginate = true) => {
-    if (lastRequest.value) return
+    if (endRequest.value) return
 
     if (!paginate) clearProducts()
 
@@ -34,13 +34,15 @@ export const useProductStore = defineStore('productStore', () => {
     setProducts(data)
 
     if (!data.length || !paginate) {
-      lastRequest.value = true
+      endRequest.value = true
     }
   }
 
   const clearProducts = () => {
     products.value = []
-    lastRequest.value = false
+    offset.value = 0
+    limit.value = 10
+    endRequest.value = false
   }
 
   const setProducts = (data) => {
@@ -60,7 +62,7 @@ export const useProductStore = defineStore('productStore', () => {
     offset,
     limit,
     filters,
-    lastRequest,
+    endRequest,
     product,
 
     getProducts,

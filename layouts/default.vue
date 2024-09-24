@@ -20,7 +20,7 @@
       </v-app-bar-title>
     </v-app-bar>
 
-    <v-main class="bg-grey-lighten-4" style="min-height: 93vh;">
+    <v-main class="bg-grey-lighten-4" style="min-height: 90dvh;">
       <div>
         <NuxtPage />
       </div>
@@ -39,10 +39,6 @@
 
 
 <style lang="scss" scoped>
-.content {
-  height: 85vh;
-}
-
 .v-footer {
   flex-shrink: 0;
 }
