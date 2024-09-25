@@ -19,6 +19,7 @@ const categories = ref([
     name: 'All',
   }
 ])
+const loading = ref(true)
 
 watch(
   route,
@@ -32,6 +33,7 @@ watch(
         },
         ...categoryStore.categoriesData
       ]
+      await init('ok')
     }
   }, {
     immediate: true,
@@ -39,6 +41,7 @@ watch(
 )
 
 async function init ({ done } = {}) {
+  loading.value = true
   if (endRequest.value) {
     if (typeof done === 'function') done('ok')
 
@@ -57,12 +60,37 @@ async function init ({ done } = {}) {
     
     if (typeof done === 'function') done('error')
   }
+
+  loading.value = false
 }
 
 async function filterProductByCategory(id) {
   productStore.clearProducts()
   filters.value.categoryId = id
   await init('ok')
+}
+
+async function removeProduct(id) {
+  const confirm = await confirmDialogStore.show('Are you sure you want to delete this product?', {
+    title: 'Removing Product',
+  })
+
+  if (confirm) {
+    await productStore.deleteProduct(id)
+      .then(async () => {
+        snackbarStore.show({
+          message: 'Successfully delete selected product!',
+        })
+
+        await init({ page: meta.value.page, itemsPerPage: meta.value.perPage, sortBy: [{ key: 'created_at', order: 'desc' }] })
+      })
+      .catch(() => {
+        snackbarStore.show({
+          color: 'error',
+          message: 'Something went wrong while deleting selected product!',
+        })
+      })
+  }
 }
 </script>
 
@@ -130,7 +158,9 @@ async function filterProductByCategory(id) {
                         <v-icon left icon="mdi-pencil" /> Edit
                       </v-list-item-title>
                     </v-list-item>
-                    <v-list-item>
+                    <v-list-item
+                      @click.prevent="removeProduct(product.id)"
+                    >
                       <v-list-item-title>
                         <v-icon left icon="mdi-delete" /> Delete
                       </v-list-item-title>
@@ -191,16 +221,25 @@ async function filterProductByCategory(id) {
   </v-infinite-scroll>
 
   <v-fab
-    color="primary"
-    icon="mdi-plus"
+    color="green"
     location="bottom end"
     size="64"
     absolute
     app
     appear
+    icon
     :to="'/add'"
     :style="'bottom: 10dvh;'"
-  ></v-fab>
+  >
+    <v-icon :icon="'mdi-plus'" />
+    <v-tooltip
+      activator="parent"
+      location="top"
+      :disabled="loading"
+    >
+      Add Product
+    </v-tooltip>
+  </v-fab>
 
   <NuxtPage />
 </template>

@@ -57,6 +57,26 @@ export const useProductStore = defineStore('productStore', () => {
     })
   }
 
+  const submitProduct = async payload => {
+    if (payload?.id) {
+      await api.put(`/products/${payload.id}`, payload)
+    }
+
+    await api.post('/products', payload)
+  }
+
+  const deleteProduct = id => {
+    return new Promise(async (resolve, reject) => {
+      await api.del(`/products/${id}`)
+        .then(() => {
+          resolve()
+        })
+        .catch((error) => {
+          reject(error)
+        })
+    })
+  }
+
   return {
     products,
     offset,
@@ -67,5 +87,8 @@ export const useProductStore = defineStore('productStore', () => {
 
     getProducts,
     clearProducts,
+    setProducts,
+    submitProduct,
+    deleteProduct,
   }
 })
