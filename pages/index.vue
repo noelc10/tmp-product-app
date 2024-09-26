@@ -13,6 +13,7 @@ const snackbarStore = useSnackbarStore()
 const confirmDialogStore = useConfirmDialogStore()
 
 const { products, offset, limit, filters, endRequest } = storeToRefs(productStore)
+const { getProducts, clearProducts, deleteProduct } = useProductStore()
 const categories = ref([
   {
     id: null,
@@ -25,6 +26,9 @@ watch(
   route,
   async (val) => {
     if (val.name === 'index') {
+      clearProducts()
+      await init('ok')
+      
       await categoryStore.getCategories()
       categories.value = [
         {
@@ -33,7 +37,6 @@ watch(
         },
         ...categoryStore.categoriesData
       ]
-      await init('ok')
     }
   }, {
     immediate: true,
@@ -49,7 +52,7 @@ async function init ({ done } = {}) {
   }
 
   try {
-    await productStore.getProducts(true)
+    await getProducts(true)
     
     if (typeof done === 'function') done('ok')
   } catch (e) {
@@ -64,8 +67,8 @@ async function init ({ done } = {}) {
   loading.value = false
 }
 
-async function filterProductByCategory(id) {
-  productStore.clearProducts()
+async function filterProductByCategory(id = null) {
+  clearProducts()
   filters.value.categoryId = id
   await init('ok')
 }
@@ -76,13 +79,14 @@ async function removeProduct(id) {
   })
 
   if (confirm) {
-    await productStore.deleteProduct(id)
+    await deleteProduct(id)
       .then(async () => {
         snackbarStore.show({
           message: 'Successfully delete selected product!',
         })
-
-        await init({ page: meta.value.page, itemsPerPage: meta.value.perPage, sortBy: [{ key: 'created_at', order: 'desc' }] })
+        
+        clearProducts()
+        await init('ok')
       })
       .catch(() => {
         snackbarStore.show({
@@ -125,7 +129,6 @@ async function removeProduct(id) {
       
       <v-row>
         <v-fade-transition
-          leave-absolute
           v-for="product in products"
           :key="product.id"
         >
@@ -135,7 +138,9 @@ async function removeProduct(id) {
             md="4"
             lg="3"
           >
-            <v-card>
+            <v-card
+              :to="`/${product.id}`"
+            >
               <v-btn
                 icon
                 color="green"
@@ -153,7 +158,9 @@ async function removeProduct(id) {
                   activator="parent"
                 >
                   <v-list>
-                    <v-list-item>
+                    <v-list-item
+                      @click.prevent="navigateTo(`/${product.id}/edit`)"
+                    >
                       <v-list-item-title>
                         <v-icon left icon="mdi-pencil" /> Edit
                       </v-list-item-title>

@@ -18,15 +18,18 @@ const emit = defineEmits([
   'update:isDialogVisible',
 ])
 
+const helpers = useHelpers()
+
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
 const snackbarStore = useSnackbarStore()
 
 const { product } = storeToRefs(productStore)
+const { clearProduct } = useProductStore()
 
 const initialValues = ref({ images: [''] })
 
-const { errors, meta, isSubmitting, isValidating, handleSubmit } = useForm({
+const { errors, meta, isSubmitting, isValidating, resetForm, handleSubmit } = useForm({
   initialValues: initialValues.value,
   validationSchema: yup.object({
     title: yup.string().required('The title field is required.').min(2, 'The description field should have at least 2 characters.'),
@@ -65,8 +68,17 @@ watch(product,
   val => {
     if (val) {
       initialValues.value = { ...product.value }
-      initialValues.value.categoryId = product.category.id
+      initialValues.value.categoryId = product.value.category.id
+      // initialValues.value.images = Array.isArray(product.value.images)
+      //       ? helpers.sanitizeArray(product.value.images)
+      //       : helpers.isValidJSON(product.value.images)
+      //         ? JSON.parse(product.value.images)
+      //         : helpers.sanitizeArray(product.value.images)
       delete initialValues.value.category
+      delete initialValues.value.creationAt
+      delete initialValues.value.updatedAt
+
+      resetForm({ values: initialValues.value })
     }
   },
   {
@@ -78,10 +90,12 @@ const updateModelValue = val => {
   emit('update:isDialogVisible', val)
 }
 
-const onSubmit = handleSubmit(async (values, { resetForm }) => {
+const onSubmit = handleSubmit(async (values) => {
   loading.value = true
   
   try {
+    values.price = parseFloat(values.price)
+    
     await productStore.submitProduct(values)
 
     snackbarStore.show({
@@ -137,7 +151,7 @@ onMounted(async () => {
           <v-container fluid fill-height class="px-0">
             <v-row align="center">
               <v-col>
-                {{ editMode ? 'Update' : 'Add' }} Product
+                {{ editMode ? 'Edit' : 'Add' }} Product
               </v-col>
               <v-spacer />
               <v-col class="text-right">

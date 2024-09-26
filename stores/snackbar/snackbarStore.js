@@ -7,18 +7,20 @@ export const useSnackbarStore = defineStore('snackbarStore', () => {
   const color = ref('success')
   const icon = ref('mdi-check')
   const timer = ref(5000)
+  const location = ref('top end')
 
   function show(data) {
-    message.value = data.message || ''
-    color.value = data.color || 'success'
-    timer.value = data.timer || 5000
+    message.value = data.message ?? ''
+    color.value = data.color ?? 'success'
+    timer.value = data.timer ?? 5000
+    location.value = data.location ?? 'top end'
     icon.value = data.color === 'success'
       ? 'mdi-check'
       : data.color === 'error'
         ? 'mdi-alert-circle'
         : data.color === 'warning'
           ? 'mdi-alert'
-          : data.color === 'info' ? 'info' : data.icon || 'mdi-check'
+          : data.color === 'info' ? 'info' : data.icon ?? 'mdi-check'
     showSnackbar.value = true
   }
 
@@ -28,6 +30,7 @@ export const useSnackbarStore = defineStore('snackbarStore', () => {
     color.value = 'success'
     icon.value = 'mdi-check'
     timer.value = 3000
+    location.value = 'top end'
   }
 
   return {
@@ -36,6 +39,7 @@ export const useSnackbarStore = defineStore('snackbarStore', () => {
     color,
     icon,
     timer,
+    location,
     show,
     reset
   }

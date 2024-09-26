@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 export const useProductStore = defineStore('productStore', () => {
   const api = useAPI()
+  const helpers = useHelpers()
   
   const products = ref([])
   const offset = ref(0)
@@ -38,11 +39,10 @@ export const useProductStore = defineStore('productStore', () => {
     }
   }
 
-  const clearProducts = () => {
-    products.value = []
-    offset.value = 0
-    limit.value = 10
-    endRequest.value = false
+  const getProduct = async (id) => {
+    const data = await api.get(`/products/${id}`)
+
+    if (data) setProduct(data)
   }
 
   const setProducts = (data) => {
@@ -50,16 +50,40 @@ export const useProductStore = defineStore('productStore', () => {
       const i = _findIndex(products.value, { id: item.id })
 
       if (i < 0) {
-        products.value.push(item)
+        products.value.push({
+          ...item,
+          images: sanitizeImage(item.images)
+        })
       } else {
         products.value.splice(i, 1, item)
       }
     })
   }
+  
+  const setProduct = (data) => {
+    clearProduct()
+    
+    data.images = sanitizeImage(data.images)
+
+    product.value = data
+  }
+
+  const clearProducts = () => {
+    products.value = []
+    offset.value = 0
+    limit.value = 10
+    endRequest.value = false
+  }
+
+  const clearProduct = () => {
+    product.value = null
+  }
 
   const submitProduct = async payload => {
     if (payload?.id) {
       await api.put(`/products/${payload.id}`, payload)
+
+      return
     }
 
     await api.post('/products', payload)
@@ -77,6 +101,16 @@ export const useProductStore = defineStore('productStore', () => {
     })
   }
 
+  const sanitizeImage = (images) => {
+    let sanitizedImgs = helpers.sanitizeArray(images)
+
+    return Array.isArray(images)
+      ? sanitizedImgs
+      : helpers.isValidJSON(images)
+        ? JSON.parse(images)
+        : sanitizedImgs
+  }
+
   return {
     products,
     offset,
@@ -88,6 +122,9 @@ export const useProductStore = defineStore('productStore', () => {
     getProducts,
     clearProducts,
     setProducts,
+    getProduct,
+    clearProduct,
+    setProduct,
     submitProduct,
     deleteProduct,
   }
