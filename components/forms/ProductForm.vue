@@ -14,12 +14,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits([
-  'update:isDialogVisible',
-])
-
-const helpers = useHelpers()
-
+const emit = defineEmits(['update:isDialogVisible'])
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
 const snackbarStore = useSnackbarStore()
@@ -32,11 +27,11 @@ const initialValues = ref({ images: [''] })
 const { errors, meta, isSubmitting, isValidating, resetForm, handleSubmit } = useForm({
   initialValues: initialValues.value,
   validationSchema: yup.object({
-    title: yup.string().required('The title field is required.').min(2, 'The description field should have at least 2 characters.'),
+    title: yup.string().required('The title field is required.').min(2, 'The title field should have at least 2 characters.'),
     description: yup.string().required('The description field is required.').min(3, 'The description field should have at least 3 characters.'),
     price: yup.number().required('The price field is required.').positive('The price field should be greater than 0.').integer().typeError('The price field must be a number.'),
     categoryId: yup.string().required('The category ID field is required.'),
-    images: yup.array().of(yup.string('The images field/s must be in a form of text.').url('The images field/s must be a valid URL.')).optional().ensure(),
+    images: yup.array().of(yup.string().url('The images field must be a valid URL.')).optional().ensure(),
   }),
 })
 
@@ -46,11 +41,8 @@ const price = useField('price')
 const categoryId = useField('categoryId')
 const { remove, push, fields } = useFieldArray('images')
 
-const categories = ref([
-  {
-    id: null,
-    name: 'All',
-  },
+const categories = computed(() => [
+  { id: null, name: 'All' },
   ...categoryStore.categoriesData
 ])
 
@@ -58,69 +50,43 @@ const refProductVForm = ref()
 
 const loading = ref(false)
 
-const editMode = computed(() => {
-  return product.value !== null
-})
-
+const editMode = computed(() => product.value !== null)
 const submitDisabled = computed(() => isSubmitting.value || isValidating.value || !meta.value.valid)
 
-watch(product,
-  val => {
+watch(product, (val) => {
     if (val) {
-      initialValues.value = { ...product.value }
-      initialValues.value.categoryId = product.value.category.id
-      // initialValues.value.images = Array.isArray(product.value.images)
-      //       ? helpers.sanitizeArray(product.value.images)
-      //       : helpers.isValidJSON(product.value.images)
-      //         ? JSON.parse(product.value.images)
-      //         : helpers.sanitizeArray(product.value.images)
-      delete initialValues.value.category
-      delete initialValues.value.creationAt
-      delete initialValues.value.updatedAt
-
+      const { category, creationAt, updatedAt, ...rest } = product.value
+      initialValues.value = { ...rest, categoryId: category.id }
       resetForm({ values: initialValues.value })
     }
-  },
-  {
-    immediate: true,
-  },
-)
-
-const updateModelValue = val => {
+}, { immediate: true })
+const updateModelValue = (val) => {
   emit('update:isDialogVisible', val)
 }
 
 const onSubmit = handleSubmit(async (values) => {
   loading.value = true
-  
   try {
     values.price = parseFloat(values.price)
-    
     await productStore.submitProduct(values)
-
     snackbarStore.show({
       color: 'success',
-      message: `Successfully ${editMode.value ? 'updating' : 'adding'} product.`,
+      message: `Successfully ${editMode.value ? 'updated' : 'added'} product.`,
     })
-
     resetForm()
-
     updateModelValue(false)
   } catch (e) {
-    if ((e.status >= 400 && e.status >= 499) || e?.data?.errors) {
-      snackbarStore.show({
-        color: 'error',
-        message: `Validation error while ${editMode.value ? 'updating' : 'adding'} product. Kindly please check the form data for validated valued before submitting.`,
-      })
-    }
-    
+    const isValidationError = (e.status >= 400 && e.status < 500) || e?.data?.errors
+    const errorMessage = isValidationError 
+      ? `Validation error while ${editMode.value ? 'updating' : 'adding'} product. Please check the form data.`
+      : `Something went wrong while ${editMode.value ? 'updating' : 'adding'} product: ${e?.statusText ?? 'Unknown error'}${e?.data?.message ? ': ' + e.data.message : ''}`
     snackbarStore.show({
       color: 'error',
-      message: `Something went wrong while ${editMode.value ? 'updating' : 'adding'} product: ${e?.statusText + ': ' + e?.data?.message ?? e?.statusText}`,
+      message: errorMessage,
     })
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 })
 
 const onCancel = () => {

@@ -153,6 +153,7 @@ async function removeProduct(id) {
                 <v-icon icon="mdi-dots-vertical" />
 
                 <v-menu
+                  open-on-hover
                   location="bottom"
                   transition="scale-transition"
                   activator="parent"

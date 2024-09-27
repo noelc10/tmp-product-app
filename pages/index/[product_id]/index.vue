@@ -3,42 +3,42 @@ import { useProductStore } from '@/stores/productStore'
 import { useSnackbarStore } from '@/stores/snackbar/snackbarStore'
 
 const route = useRoute()
-
 const { getProduct, clearProduct } = useProductStore()
 const snackbarStore = useSnackbarStore()
-
 const isDetailsDialogVisible = ref(false)
 
-watch(
-  route,
-  async (val) => {
-    try {
-      await getProduct(val.params.product_id)
+const fetchProduct = async (productId) => {
+  try {
+    await getProduct(productId)
     } catch (e) {
       snackbarStore.show({
         color: 'error',
         message: 'Something went wrong while fetching product!',
       })
-
       navigateTo('/')
-
-      return
+    return false
     }
+  return true
+}
 
-    if (val.name === 'index-product_id') isDetailsDialogVisible.value = true
+watch(
+  () => route.params.product_id,
+  async (productId) => {
+    if (await fetchProduct(productId) && route.name === 'index-product_id') {
+      isDetailsDialogVisible.value = true
+    }
   },
   { immediate: true }
 )
 
 watch(
   isDetailsDialogVisible,
-  async (val) => {
-    if (!val) {
-      await setTimeout(() => {
+  (visible) => {
+    if (!visible) {
+      setTimeout(() => {
         clearProduct()
-
         navigateTo('/')
-      }, 500);
+      }, 500)
     }
   }
 )

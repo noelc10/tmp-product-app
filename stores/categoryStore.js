@@ -2,19 +2,17 @@ import { defineStore } from 'pinia'
 
 export const useCategoryStore = defineStore('categoryStore', () => {
   const api = useAPI()
-
   const categories = ref([])
 
-  const categoriesData = computed(() => {
-    return categories.value
-  })
-
+  const categoriesData = computed(() => categories.value)
   const getCategories = async () => {
-    clearCategories()
-    
+    try {
     const data = await api.get('/categories')
-    
     setCategories(data)
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      clearCategories()
+  }
   }
 
   const clearCategories = () => {
@@ -22,22 +20,15 @@ export const useCategoryStore = defineStore('categoryStore', () => {
   }
 
   const setCategories = (data) => {
+    const categoryMap = new Map(categories.value.map(item => [item.id, item]))
     data.forEach(item => {
-      const i = _findIndex(categories.value, { id: item.id })
-
-      if (i < 0) {
-        categories.value.push(item)
-      } else {
-        categories.value.splice(i, 1, item)
-      }
+      categoryMap.set(item.id, item)
     })
+    categories.value = Array.from(categoryMap.values())
   }
-
   return {
     categories,
-
     categoriesData,
-
     getCategories,
     clearCategories
   }

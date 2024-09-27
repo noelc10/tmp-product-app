@@ -9,39 +9,29 @@ const snackbarStore = useSnackbarStore()
 
 const isFormDialogVisible = ref(false)
 
-watch(
-  route,
-  async (val) => {
-    try {
+const handleRouteChange = async (val) => {
+  try {
       await getProduct(val.params.product_id)
-    } catch (e) {
-      snackbarStore.show({
-        color: 'error',
-        message: 'Something went wrong while fetching product!',
-      })
-
-      navigateTo('/')
-
-      return
-    }
-
     if (val.name === 'index-product_id-edit') isFormDialogVisible.value = true
-  },
-  { immediate: true }
-)
-
-watch(
-  isFormDialogVisible,
-  async (val) => {
-    if (!val) {
-      await setTimeout(() => {
-        clearProduct()
-
+  } catch (e) {
+    snackbarStore.show({
+      color: 'error',
+      message: 'Something went wrong while fetching product!',
+    })
         navigateTo('/')
-      }, 500);
     }
   }
-)
+
+const handleDialogVisibilityChange = async (val) => {
+  if (!val) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    clearProduct()
+    navigateTo('/')
+  }
+}
+
+watch(route, handleRouteChange, { immediate: true })
+watch(isFormDialogVisible, handleDialogVisibilityChange)
 </script>
 
 <template>

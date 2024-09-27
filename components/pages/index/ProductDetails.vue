@@ -11,28 +11,18 @@ const props = defineProps({
   isDialogVisible: {
     type: Boolean,
     required: true,
-  }
+  },
 })
 
-const emit = defineEmits([
-  'update:isDialogVisible',
-])
-
-const helpers = useHelpers()
-
+const emit = defineEmits(['update:isDialogVisible'])
 const productStore = useProductStore()
-
 const { product } = storeToRefs(productStore)
 
 const loading = ref(false)
 
-const updateModelValue = val => {
-  emit('update:isDialogVisible', val)
-}
+const updateModelValue = val => emit('update:isDialogVisible', val)
 
-const onCancel = () => {
-  updateModelValue(false)
-}
+const onCancel = () => updateModelValue(false)
 </script>
 
 <template>

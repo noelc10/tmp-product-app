@@ -1,12 +1,11 @@
 <script setup>
 const route = useRoute()
-
 const isFormDialogVisible = ref(false)
 
 watch(
-  route,
-  (val) => {
-    if (val.name === 'index-add') isFormDialogVisible.value = true
+  () => route.name,
+  (name) => {
+    isFormDialogVisible.value = (name === 'index-add')
   },
   { immediate: true }
 )
